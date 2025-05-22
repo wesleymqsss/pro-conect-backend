@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/login")
@@ -22,62 +19,87 @@ public class LoginController {
 
     // 1) LOGIN
     @PostMapping("/auth")
-    public String login(@RequestBody LoginDTO dto) {
-        Optional<LoginAlunoModel> u = loginRepository
-                .findByUsernameAndPassword(dto.getUsername(), dto.getPassword());
-        return u.isPresent()
-                ? "Login bem‑sucedido!"
-                : "Usuário ou senha inválidos.";
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginDTO dto) {
+        Optional<LoginAlunoModel> u = loginRepository.findByUsernameAndPassword(dto.getUsername(), dto.getPassword());
+
+        Map<String, String> response = new HashMap<>();
+        if (u.isPresent()) {
+            response.put("message", "Login bem‑sucedido!");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("error", "Usuário ou senha inválidos.");
+            return ResponseEntity.status(401).body(response);
+        }
     }
 
     // 2) CREATE (registro)
     @PostMapping("/register")
-    public String register(@RequestBody LoginDTO dto) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody LoginDTO dto) {
         LoginAlunoModel u = new LoginAlunoModel();
         u.setUsername(dto.getUsername());
         u.setPassword(dto.getPassword());
         u.setRole(LoginAlunoModel.Role.valueOf(dto.getRole()));
         loginRepository.save(u);
-        return "Usuário registrado com ID: " + u.getId();
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Usuário registrado com ID: " + u.getId());
+        return ResponseEntity.ok(response);
     }
 
     // 3) READ ALL
     @GetMapping
-    public List<LoginAlunoModel> listAll() {
-        return loginRepository.findAll();
+    public ResponseEntity<List<LoginAlunoModel>> listAll() {
+        List<LoginAlunoModel> users = loginRepository.findAll();
+        return ResponseEntity.ok(users);
     }
 
     // 4) READ BY ID
     @GetMapping("/{id}")
-    public Optional<LoginAlunoModel> getById(@PathVariable Integer id) {
-        return loginRepository.findById(id);
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable Integer id) {
+        Optional<LoginAlunoModel> userOpt = loginRepository.findById(id);
+
+        if (userOpt.isPresent()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Usuário encontrado.");
+            response.put("user", userOpt.get());
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", "Usuário não encontrado."));
+        }
     }
+
+
 
     // 5) UPDATE
     @PutMapping("/{id}")
-    public String update(@PathVariable Integer id, @RequestBody LoginDTO dto) {
+    public ResponseEntity<Map<String, String>> update(@PathVariable Integer id, @RequestBody LoginDTO dto) {
         Optional<LoginAlunoModel> uOpt = loginRepository.findById(id);
         if (uOpt.isEmpty()) {
-            return "Usuário não encontrado.";
+            return ResponseEntity.status(404).body(Map.of("error", "Usuário não encontrado."));
         }
+
         LoginAlunoModel u = uOpt.get();
         u.setUsername(dto.getUsername());
         u.setPassword(dto.getPassword());
         u.setRole(LoginAlunoModel.Role.valueOf(dto.getRole()));
         loginRepository.save(u);
-        return "Usuário atualizado.";
+
+        return ResponseEntity.ok(Map.of("message", "Usuário atualizado."));
     }
 
     // 6) DELETE
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Integer id) {
         if (!loginRepository.existsById(id)) {
-            return "Usuário não encontrado.";
+            return ResponseEntity.status(404).body(Map.of("error", "Usuário não encontrado."));
         }
+
         loginRepository.deleteById(id);
-        return "Usuário deletado.";
+        return ResponseEntity.ok(Map.of("message", "Usuário deletado."));
     }
 
+    // 7) FIND LOGIN
     @GetMapping("/find")
     public ResponseEntity<Map<String, Object>> findByUsernameAndPassword(
             @RequestParam String username,
@@ -90,11 +112,7 @@ public class LoginController {
             response.put("user", u.get());
             return ResponseEntity.ok(response);
         } else {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Usuário ou senha inválidos.");
-            return ResponseEntity.status(404).body(error);
+            return ResponseEntity.status(404).body(Map.of("error", "Usuário ou senha inválidos."));
         }
     }
 }
-
-
