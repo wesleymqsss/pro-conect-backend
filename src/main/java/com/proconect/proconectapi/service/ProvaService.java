@@ -72,4 +72,10 @@ public class ProvaService {
     public void delete(Long id) {
         provaRepo.deleteById(id);
     }
+    @Transactional(readOnly = true)
+    public Prova getByIdComQuestoes(Long id) {
+        return provaRepo.findByIdWithQuestoesEOpcoes(id)
+                .orElseThrow(() -> new RuntimeException("Prova não encontrada"));
+    }
+
 }

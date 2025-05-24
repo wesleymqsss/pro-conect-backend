@@ -13,13 +13,14 @@ public class Aluno {
     private Integer usuarioId;
 
     private String nome;
-
     private String matricula;
-
     private String curso;
-
     private String periodo;
-    
+
+    private String turma;
+
+    // Getters e setters
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -37,4 +38,7 @@ public class Aluno {
 
     public String getPeriodo() { return periodo; }
     public void setPeriodo(String periodo) { this.periodo = periodo; }
+
+    public String getTurma() { return turma; }
+    public void setTurma(String turma) { this.turma = turma; }
 }
