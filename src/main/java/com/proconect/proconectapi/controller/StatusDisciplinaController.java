@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/status-disciplinas")
+@RequestMapping("/api/status-disciplinas")
 public class StatusDisciplinaController {
 
     private final StatusDisciplinaService statusDisciplinaService;

@@ -24,7 +24,7 @@ public class AlunoProvaController {
     /**
      * POST /respostas → Aluno envia as respostas.
      */
-    @PostMapping("/respostas")
+    @PostMapping("/api/respostas")
     @ResponseStatus(HttpStatus.OK)
     public AlunoProvaResultadoResponse enviarRespostas(
             @RequestBody AlunoProvaRespostaRequest req) {
@@ -34,7 +34,7 @@ public class AlunoProvaController {
     /**
      * GET /provas/{id} → Retorna prova sem gabarito para o aluno.
      */
-    @GetMapping("/aluno/provas/{id}")
+    @GetMapping("/api/aluno/provas/{id}")
     public ProvaSemGabaritoDTO getProvaSemGabarito(@PathVariable Long id) {
         Prova prova = provaService.getByIdComQuestoes(id);
 

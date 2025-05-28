@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("nota")
+@RequestMapping("/api/nota")
 public class NotaController {
     private final NotaRepository notaRepository;
 
@@ -22,7 +22,7 @@ public class NotaController {
         return notaRepository.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/{id}")
     public ResponseEntity<Nota> getNotaById(@PathVariable Integer id) {
         Optional<Nota> nota = notaRepository.findById(id);
         return nota.map(ResponseEntity::ok)
@@ -34,7 +34,7 @@ public class NotaController {
         return notaRepository.save(nota);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/{id}")
     public ResponseEntity<Void> deleteNota(@PathVariable Integer id) {
         if (notaRepository.existsById(id)) {
             notaRepository.deleteById(id);

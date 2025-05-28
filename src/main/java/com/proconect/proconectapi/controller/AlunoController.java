@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("aluno")
+@RequestMapping("/api/aluno")
 public class AlunoController {
 
     private final AlunoRepository alunoRepository;
@@ -27,7 +27,7 @@ public class AlunoController {
     }
 
     // Retorna alunos por turma (usando DTO)
-    @GetMapping("/turma/{turma}")
+    @GetMapping("/api/turma/{turma}")
     public ResponseEntity<List<AlunoRespostaDTO>> buscarAlunosPorTurma(@PathVariable String turma) {
         List<Aluno> alunos = alunoRepository.findByTurma(turma);
         List<AlunoRespostaDTO> alunosRespostaDTO = alunos.stream()

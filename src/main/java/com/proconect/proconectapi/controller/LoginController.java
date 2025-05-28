@@ -18,7 +18,7 @@ public class LoginController {
     private LoginRepository loginRepository;
 
     // 1) LOGIN
-    @PostMapping("/auth")
+    @PostMapping("/api/auth")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginDTO dto) {
         Optional<LoginAlunoModel> u = loginRepository.findByUsernameAndPassword(dto.getUsername(), dto.getPassword());
 
@@ -33,7 +33,7 @@ public class LoginController {
     }
 
     // 2) CREATE (registro)
-    @PostMapping("/register")
+    @PostMapping("/api/register")
     public ResponseEntity<Map<String, String>> register(@RequestBody LoginDTO dto) {
         LoginAlunoModel u = new LoginAlunoModel();
         u.setUsername(dto.getUsername());
@@ -54,7 +54,7 @@ public class LoginController {
     }
 
     // 4) READ BY ID
-    @GetMapping("/{id}")
+    @GetMapping("/api/{id}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable Integer id) {
         Optional<LoginAlunoModel> userOpt = loginRepository.findById(id);
 
@@ -72,7 +72,7 @@ public class LoginController {
 
 
     // 5) UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("/api/{id}")
     public ResponseEntity<Map<String, String>> update(@PathVariable Integer id, @RequestBody LoginDTO dto) {
         Optional<LoginAlunoModel> uOpt = loginRepository.findById(id);
         if (uOpt.isEmpty()) {
@@ -89,7 +89,7 @@ public class LoginController {
     }
 
     // 6) DELETE
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/{id}")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Integer id) {
         if (!loginRepository.existsById(id)) {
             return ResponseEntity.status(404).body(Map.of("error", "Usuário não encontrado."));
@@ -100,7 +100,7 @@ public class LoginController {
     }
 
     // 7) FIND LOGIN
-    @GetMapping("/find")
+    @GetMapping("/api/find")
     public ResponseEntity<Map<String, Object>> findByUsernameAndPassword(
             @RequestParam String username,
             @RequestParam String password) {
