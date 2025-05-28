@@ -29,7 +29,7 @@ public class ProvaController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/api/{id}")
+    @GetMapping("/{id}")
     public ProvaResponse get(@PathVariable Long id) {
         Prova p = service.getById(id);
         return new ProvaResponse(
@@ -52,7 +52,7 @@ public class ProvaController {
                 p.getProfessor().getId());
     }
 
-    @GetMapping("/api/{id}/detalhada")
+    @GetMapping("/detalhadas/{id}")
     public RespostasDetalhadasDTO.ProvaDetalhadaResponse getDetalhada(@PathVariable Long id) {
         Prova p = service.getByIdComQuestoes(id);  // Aqui usa o método que traz as coleções carregadas
 
@@ -83,7 +83,7 @@ public class ProvaController {
 
 
 
-    @DeleteMapping("/api/{id}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         service.delete(id);

@@ -22,7 +22,7 @@ public class NotaController {
         return notaRepository.findAll();
     }
 
-    @GetMapping("/api/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Nota> getNotaById(@PathVariable Integer id) {
         Optional<Nota> nota = notaRepository.findById(id);
         return nota.map(ResponseEntity::ok)
@@ -34,7 +34,7 @@ public class NotaController {
         return notaRepository.save(nota);
     }
 
-    @DeleteMapping("/api/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNota(@PathVariable Integer id) {
         if (notaRepository.existsById(id)) {
             notaRepository.deleteById(id);

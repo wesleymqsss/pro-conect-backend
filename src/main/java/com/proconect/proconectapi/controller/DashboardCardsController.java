@@ -18,7 +18,7 @@ public class DashboardCardsController {
     @Autowired
     private DashboardCardsRepository dashboardCardsRepository;
 
-    @GetMapping("/api/cards")
+    @GetMapping("/cards")
     public ResponseEntity<?> getDashboardCards() {
         List<DashBoardCardsModel> data = dashboardCardsRepository.findAll();
         if (data.isEmpty()) {

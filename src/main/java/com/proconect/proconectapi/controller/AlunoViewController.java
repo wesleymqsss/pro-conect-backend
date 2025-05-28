@@ -23,7 +23,7 @@ public class AlunoViewController {
     }
 
     /** lista só um aluno: /api/alunos/{id} */
-    @GetMapping("/api/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<List<AlunoView>> buscarPorAluno(@PathVariable Long id) {
         List<AlunoView> lista = repo.findByAlunoId(id);
         if (lista.isEmpty()) {

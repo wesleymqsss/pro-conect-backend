@@ -27,7 +27,7 @@ public class AlunoController {
     }
 
     // Retorna alunos por turma (usando DTO)
-    @GetMapping("/api/turma/{turma}")
+    @GetMapping("/{turma}")
     public ResponseEntity<List<AlunoRespostaDTO>> buscarAlunosPorTurma(@PathVariable String turma) {
         List<Aluno> alunos = alunoRepository.findByTurma(turma);
         List<AlunoRespostaDTO> alunosRespostaDTO = alunos.stream()
