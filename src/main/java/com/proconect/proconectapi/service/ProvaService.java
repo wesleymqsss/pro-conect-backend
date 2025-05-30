@@ -1,14 +1,20 @@
 package com.proconect.proconectapi.service;
 
-import com.proconect.proconectapi.DTO.*;
-import com.proconect.proconectapi.model.*;
-import com.proconect.proconectapi.repository.*;
+import com.proconect.proconectapi.DTO.ProvaRequest;
+import com.proconect.proconectapi.model.Opcao;
+import com.proconect.proconectapi.model.Prova;
+import com.proconect.proconectapi.model.questao;
+import com.proconect.proconectapi.repository.MateriaRepository;
+import com.proconect.proconectapi.repository.ProfessorRepository;
+import com.proconect.proconectapi.repository.ProvaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
 public class ProvaService {
+
     private final ProvaRepository provaRepo;
     private final MateriaRepository materiaRepo;
     private final ProfessorRepository professorRepo;
@@ -65,17 +71,23 @@ public class ProvaService {
         p.setDescricao(req.descricao());
         p.setDataProva(req.dataProva());
         p.getQuestoes().clear();
-        create(req);
+        create(req); // cuidado: isso cria uma nova prova, ideal seria atualizar as questões também
         return p;
     }
 
     public void delete(Long id) {
         provaRepo.deleteById(id);
     }
+
     @Transactional(readOnly = true)
     public Prova getByIdComQuestoes(Long id) {
         return provaRepo.findByIdWithQuestoesEOpcoes(id)
                 .orElseThrow(() -> new RuntimeException("Prova não encontrada"));
     }
 
+    // ✅ Novo método: listar provas por professor
+    @Transactional(readOnly = true)
+    public List<Prova> listByProfessor(Long professorId) {
+        return provaRepo.buscarPorProfessor(professorId);
+    }
 }

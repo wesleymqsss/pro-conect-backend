@@ -1,16 +1,20 @@
 package com.proconect.proconectapi.controller;
 
-import com.proconect.proconectapi.DTO.*;
+import com.proconect.proconectapi.DTO.ProvaResponse;
+import com.proconect.proconectapi.DTO.ProvaRequest;
+import com.proconect.proconectapi.DTO.RespostasDetalhadasDTO;
 import com.proconect.proconectapi.model.Prova;
 import com.proconect.proconectapi.service.ProvaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/provas")
 public class ProvaController {
+
     private final ProvaService service;
 
     public ProvaController(ProvaService service) {
@@ -40,6 +44,19 @@ public class ProvaController {
                 p.getProfessor().getId());
     }
 
+    // NOVO endpoint para listar todas as provas de um professor
+    @GetMapping("/professor/{professorId}")
+    public List<ProvaResponse> getByProfessor(@PathVariable Long professorId) {
+        return service.listByProfessor(professorId).stream()
+                .map(p -> new ProvaResponse(
+                        p.getId(),
+                        p.getDescricao(),
+                        p.getDataProva(),
+                        p.getMateria().getId(),
+                        p.getProfessor().getId()))
+                .collect(Collectors.toList());
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProvaResponse create(@RequestBody ProvaRequest req) {
@@ -54,7 +71,7 @@ public class ProvaController {
 
     @GetMapping("/detalhadas/{id}")
     public RespostasDetalhadasDTO.ProvaDetalhadaResponse getDetalhada(@PathVariable Long id) {
-        Prova p = service.getByIdComQuestoes(id);  // Aqui usa o método que traz as coleções carregadas
+        Prova p = service.getByIdComQuestoes(id);  // Método que traz as coleções carregadas
 
         List<RespostasDetalhadasDTO.QuestaoResponse> questoes = p.getQuestoes().stream()
                 .map(q -> new RespostasDetalhadasDTO.QuestaoResponse(
@@ -80,8 +97,6 @@ public class ProvaController {
                 questoes
         );
     }
-
-
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
