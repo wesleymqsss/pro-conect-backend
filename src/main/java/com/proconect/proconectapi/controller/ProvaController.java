@@ -1,5 +1,6 @@
 package com.proconect.proconectapi.controller;
 
+import com.proconect.proconectapi.DTO.ProvaDetalhadaRequest;
 import com.proconect.proconectapi.DTO.ProvaResponse;
 import com.proconect.proconectapi.DTO.ProvaRequest;
 import com.proconect.proconectapi.DTO.RespostasDetalhadasDTO;
@@ -44,7 +45,6 @@ public class ProvaController {
                 p.getProfessor().getId());
     }
 
-    // NOVO endpoint para listar todas as provas de um professor
     @GetMapping("/professor/{professorId}")
     public List<ProvaResponse> getByProfessor(@PathVariable Long professorId) {
         return service.listByProfessor(professorId).stream()
@@ -69,9 +69,33 @@ public class ProvaController {
                 p.getProfessor().getId());
     }
 
+    @PutMapping("/{id}")
+    public ProvaResponse update(@PathVariable Long id,
+                                @RequestBody ProvaRequest req) {
+        Prova p = service.update(id, req);
+        return new ProvaResponse(
+                p.getId(),
+                p.getDescricao(),
+                p.getDataProva(),
+                p.getMateria().getId(),
+                p.getProfessor().getId());
+    }
+
+    @PostMapping("/upsert")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProvaResponse upsert(@RequestBody ProvaRequest req) {
+        Prova p = service.upsert(req);
+        return new ProvaResponse(
+                p.getId(),
+                p.getDescricao(),
+                p.getDataProva(),
+                p.getMateria().getId(),
+                p.getProfessor().getId());
+    }
+
     @GetMapping("/detalhadas/{id}")
     public RespostasDetalhadasDTO.ProvaDetalhadaResponse getDetalhada(@PathVariable Long id) {
-        Prova p = service.getByIdComQuestoes(id);  // Método que traz as coleções carregadas
+        Prova p = service.getByIdComQuestoes(id);
 
         List<RespostasDetalhadasDTO.QuestaoResponse> questoes = p.getQuestoes().stream()
                 .map(q -> new RespostasDetalhadasDTO.QuestaoResponse(
@@ -85,8 +109,8 @@ public class ProvaController {
                                         o.getRotulo(),
                                         o.getDescricao(),
                                         o.getCorreta()
-                                )).toList()
-                )).toList();
+                                )).collect(Collectors.toList())
+                )).collect(Collectors.toList());
 
         return new RespostasDetalhadasDTO.ProvaDetalhadaResponse(
                 p.getId(),
@@ -97,6 +121,38 @@ public class ProvaController {
                 questoes
         );
     }
+
+    // --- AQUI está o novo PUT para atualizar prova detalhada ---
+    @PutMapping("/detalhadas/{id}")
+    public RespostasDetalhadasDTO.ProvaDetalhadaResponse updateDetalhada(
+            @PathVariable Long id,
+            @RequestBody ProvaDetalhadaRequest req) {
+        Prova updated = service.updateDetalhada(id, req);
+
+        List<RespostasDetalhadasDTO.QuestaoResponse> questoes = updated.getQuestoes().stream()
+                .map(q -> new RespostasDetalhadasDTO.QuestaoResponse(
+                        q.getId(),
+                        q.getTexto(),
+                        q.getValor(),
+                        q.getProfessor().getId(),
+                        q.getOpcoes().stream()
+                                .map(o -> new RespostasDetalhadasDTO.OpcaoResponse(
+                                        o.getId(),
+                                        o.getRotulo(),
+                                        o.getDescricao(),
+                                        o.getCorreta()))
+                                .collect(Collectors.toList())
+                )).collect(Collectors.toList());
+
+        return new RespostasDetalhadasDTO.ProvaDetalhadaResponse(
+                updated.getId(),
+                updated.getDescricao(),
+                updated.getDataProva(),
+                updated.getMateria().getId(),
+                updated.getProfessor().getId(),
+                questoes);
+    }
+    // -------------------------------------------------------------
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

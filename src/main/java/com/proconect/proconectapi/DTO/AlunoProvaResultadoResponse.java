@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 // Resposta final da prova para o aluno
-public record AlunoProvaResultadoResponse(
+public record   AlunoProvaResultadoResponse(
         String descricao,
         LocalDate dataProva,
         Long materiaId,
