@@ -16,10 +16,7 @@ public class Aluno {
     private String matricula;
     private String curso;
     private String periodo;
-
     private String turma;
-
-    // Getters e setters
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

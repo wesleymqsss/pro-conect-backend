@@ -1,5 +1,6 @@
 package com.proconect.proconectapi.controller;
 
+import com.proconect.proconectapi.DTO.AlunoNotaProjection;
 import com.proconect.proconectapi.DTO.TurmaDTO;
 import com.proconect.proconectapi.DTO.AlunoRespostaDTO;
 import com.proconect.proconectapi.model.Aluno;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,7 +29,6 @@ public class AlunoController {
         List<String> letras = alunoRepo.findDistinctTurmas();
         return letras.stream()
                 .map(letra -> {
-                    // pega o curso de um aluno qualquer desta turma
                     String curso = alunoRepo.findByTurma(letra)
                             .stream()
                             .findFirst()
@@ -45,19 +46,28 @@ public class AlunoController {
                 .collect(Collectors.toList());
     }
 
-    @Operation(summary = "Lista todos os alunos de uma turma, passando a letra da turma")
+    @Operation(summary = "Lista todos os alunos de uma turma com suas notas finais (média das provas)")
     @GetMapping("/{turma}")
     public ResponseEntity<List<AlunoRespostaDTO>> listarAlunosPorTurma(
             @PathVariable("turma") String turma) {
 
         List<Aluno> alunos = alunoRepo.findByTurma(turma);
+
+        Map<Long, Double> notasMap = alunoRepo.buscarNotasFinaisPorAluno()
+                .stream()
+                .collect(Collectors.toMap(
+                        AlunoNotaProjection::getAlunoId,
+                        AlunoNotaProjection::getNota
+                ));
+
         List<AlunoRespostaDTO> dto = alunos.stream()
                 .map(a -> new AlunoRespostaDTO(
                         a.getId(),
                         a.getNome(),
                         a.getMatricula(),
                         a.getCurso(),
-                        a.getTurma()
+                        a.getTurma(),
+                        notasMap.getOrDefault(a.getId(), null)
                 ))
                 .collect(Collectors.toList());
 

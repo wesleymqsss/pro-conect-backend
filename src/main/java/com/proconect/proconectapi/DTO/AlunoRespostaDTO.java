@@ -6,17 +6,18 @@ public class AlunoRespostaDTO {
     private String matricula;
     private String curso;
     private String turma;
+    private Double notaFinal;
 
-    // Construtor com todos os campos
-    public AlunoRespostaDTO(Long id, String nome, String matricula, String curso, String turma) {
+    public AlunoRespostaDTO(Long id, String nome, String matricula, String curso, String turma, Double notaFinal) {
         this.id = id;
         this.nome = nome;
         this.matricula = matricula;
         this.curso = curso;
         this.turma = turma;
+        this.notaFinal = notaFinal;
     }
 
-    // Getters e setters
+    // Getters e Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -31,4 +32,7 @@ public class AlunoRespostaDTO {
 
     public String getTurma() { return turma; }
     public void setTurma(String turma) { this.turma = turma; }
+
+    public Double getNotaFinal() { return notaFinal; }
+    public void setNotaFinal(Double notaFinal) { this.notaFinal = notaFinal; }
 }
