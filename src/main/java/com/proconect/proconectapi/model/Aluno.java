@@ -15,7 +15,6 @@ public class Aluno {
     private String nome;
     private String matricula;
     private String curso;
-    private String periodo;
     private String turma;
 
     public Long getId() { return id; }
@@ -32,9 +31,6 @@ public class Aluno {
 
     public String getCurso() { return curso; }
     public void setCurso(String curso) { this.curso = curso; }
-
-    public String getPeriodo() { return periodo; }
-    public void setPeriodo(String periodo) { this.periodo = periodo; }
 
     public String getTurma() { return turma; }
     public void setTurma(String turma) { this.turma = turma; }

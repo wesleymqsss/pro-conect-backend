@@ -1,37 +1,27 @@
-package com.proconect.proconectapi.model;
+package com.proconect.proconectapi.DTO;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+public class DisciplinaAlunoCarrosselDTO {
 
-@Entity
-@Table(name = "view_disciplinas_aluno_carrossel_com_id") // <-- Nome da VIEW no MySQL
-public class DisciplinaAlunoCarrossel {
-
-    @Id
-    @Column(name = "nome_disciplina")
     private String nomeDisciplina;
-
-    @Column(name = "professor_id")
     private Long idProfessor;
-
-    @Column(name = "professor")
-    private String professor;
-
-    @Column(name = "horario_inicio")
+    private String nomeProfessor;
     private String horarioInicio;
-
-    @Column(name = "horario_fim")
     private String horarioFim;
-
-    @Column(name = "sala")
     private String sala;
-
-    @Column(name = "situacao")
     private String situacao;
 
-    // Getters e Setters
+    public DisciplinaAlunoCarrosselDTO() {}
+
+    public DisciplinaAlunoCarrosselDTO(String nomeDisciplina, Long idProfessor, String nomeProfessor,
+                                       String horarioInicio, String horarioFim, String sala, String situacao) {
+        this.nomeDisciplina = nomeDisciplina;
+        this.idProfessor = idProfessor;
+        this.nomeProfessor = nomeProfessor;
+        this.horarioInicio = horarioInicio;
+        this.horarioFim = horarioFim;
+        this.sala = sala;
+        this.situacao = situacao;
+    }
 
     public String getNomeDisciplina() {
         return nomeDisciplina;
@@ -49,12 +39,12 @@ public class DisciplinaAlunoCarrossel {
         this.idProfessor = idProfessor;
     }
 
-    public String getProfessor() {
-        return professor;
+    public String getNomeProfessor() {
+        return nomeProfessor;
     }
 
-    public void setProfessor(String professor) {
-        this.professor = professor;
+    public void setNomeProfessor(String nomeProfessor) {
+        this.nomeProfessor = nomeProfessor;
     }
 
     public String getHorarioInicio() {
