@@ -24,7 +24,7 @@ public class AlunoProvaController {
     /**
      * POST /respostas → Aluno envia as respostas.
      */
-    @PostMapping("/api/respostas")
+    @PostMapping("/api/aluno/respostas")
     @ResponseStatus(HttpStatus.OK)
     public AlunoProvaResultadoResponse enviarRespostas(
             @RequestBody AlunoProvaRespostaRequest req) {
