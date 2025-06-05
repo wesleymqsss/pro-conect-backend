@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/Alunos")
+@RequestMapping("/api/aluno")
 public class AlunoController {
 
     private final AlunoRepository alunoRepo;
