@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode; // ✅ IMPORT CORRETO
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +42,12 @@ public class AlunoProvaService {
 
         Aluno aluno = alunoRepo.findById(Math.toIntExact(req.alunoId()))
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Aluno não encontrado: " + req.alunoId()));
+
+        // Verifica se o aluno já respondeu essa prova
+        boolean jaRespondeu = notaRepo.existsByAlunoIdAndProvaId(aluno.getId(), prova.getId());
+        if (jaRespondeu) {
+            throw new IllegalStateException("O aluno já respondeu essa prova.");
+        }
 
         double totalAluno = 0;
         double totalMaximo = 0;
@@ -103,12 +109,10 @@ public class AlunoProvaService {
 
         double notaNormalizada = totalMaximo > 0 ? (totalAluno / totalMaximo) * 10.0 : 0;
 
-        // ✅ LOG (opcional)
         System.out.println("TOTAL ALUNO: " + totalAluno);
         System.out.println("TOTAL MAXIMO: " + totalMaximo);
         System.out.println("NOTA NORMALIZADA: " + notaNormalizada);
 
-        // ✅ AJUSTE DE ARREDONDAMENTO
         BigDecimal notaBd = BigDecimal.valueOf(notaNormalizada).setScale(2, RoundingMode.HALF_UP);
         AlunoNotaProva alunoNota = new AlunoNotaProva(aluno, prova, notaBd);
         notaRepo.save(alunoNota);
@@ -118,7 +122,7 @@ public class AlunoProvaService {
                 prova.getDataProva(),
                 prova.getMateria().getId(),
                 prova.getProfessor().getId(),
-                notaBd.doubleValue(), // Use o valor arredondado
+                notaBd.doubleValue(),
                 resultadosQuestoes
         );
     }
