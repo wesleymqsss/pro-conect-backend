@@ -1,0 +1,581 @@
+
+        -- DROP DATABASE IF EXISTS RANGERS;
+		CREATE DATABASE RANGERS;
+		USE RANGERS;
+
+		-- ====================================
+		-- 1. USUÁRIOS
+		-- ====================================
+		CREATE TABLE users (
+		  id         INT AUTO_INCREMENT PRIMARY KEY,
+		  username   VARCHAR(50)  NOT NULL UNIQUE,
+		  password   VARCHAR(255) NOT NULL,
+		  role       ENUM('professor','aluno') NOT NULL
+		);
+
+		-- ====================================
+		-- 2. ALUNOS (perfil estendido + turma)
+		-- ====================================
+		CREATE TABLE alunos (
+		  id         INT PRIMARY KEY,               -- mesmo ID do user
+		  nome       VARCHAR(100) NOT NULL,
+		  matricula  VARCHAR(20)  NOT NULL UNIQUE,
+		  curso      VARCHAR(50)  NOT NULL,
+		  turma      VARCHAR(10)  NOT NULL DEFAULT 'A',
+		  FOREIGN KEY (id) REFERENCES users(id)
+		);
+
+		-- ====================================
+		-- 3. PROFESSORES (perfil estendido)
+		-- ====================================
+		CREATE TABLE professores (
+		  id         INT PRIMARY KEY,               -- mesmo ID do user
+		  nome       VARCHAR(100) NOT NULL,
+		  email      VARCHAR(100) UNIQUE NOT NULL,
+		  FOREIGN KEY (id) REFERENCES users(id)
+		);
+
+		-- ====================================
+		-- 4. DISCIPLINAS
+		-- ====================================
+		CREATE TABLE disciplinas (
+		  id         INT AUTO_INCREMENT PRIMARY KEY,
+		  nome       VARCHAR(100) NOT NULL,
+		  curso      VARCHAR(100) NOT NULL
+		);
+
+		-- ====================================
+		-- 5. MATÉRIAS
+		-- ====================================
+		CREATE TABLE materias (
+		  id         INT AUTO_INCREMENT PRIMARY KEY,
+		  nome       VARCHAR(100) NOT NULL
+		);
+
+		-- ====================================
+		-- 6. MATRÍCULAS
+		-- ====================================
+		CREATE TABLE matriculas (
+		  id         INT AUTO_INCREMENT PRIMARY KEY,
+		  aluno_id   INT NOT NULL,
+		  materia_id INT NOT NULL,
+		  FOREIGN KEY (aluno_id)   REFERENCES alunos(id),
+		  FOREIGN KEY (materia_id) REFERENCES materias(id)
+		);
+
+		-- ====================================
+		-- 7. PROVAS
+		-- ====================================
+		CREATE TABLE provas (
+		  id            INT AUTO_INCREMENT PRIMARY KEY,
+		  materia_id    INT NOT NULL,
+		  professor_id  INT NOT NULL,
+		  data_prova    DATE        NOT NULL,
+		  descricao     VARCHAR(255),
+		  FOREIGN KEY (materia_id)   REFERENCES materias(id),
+		  FOREIGN KEY (professor_id) REFERENCES professores(id)
+		);
+
+		-- ====================================
+		-- 8. NOTAS
+		-- ====================================
+		CREATE TABLE notas (
+		  id         INT AUTO_INCREMENT PRIMARY KEY,
+		  prova_id   INT NOT NULL,
+		  aluno_id   INT NOT NULL,
+		  nota       DECIMAL(5,2)   NOT NULL,
+		  FOREIGN KEY (prova_id) REFERENCES provas(id),
+		  FOREIGN KEY (aluno_id)   REFERENCES alunos(id)
+		);
+
+		-- ====================================
+		-- 9. QUESTÕES
+		-- ====================================
+		CREATE TABLE questoes (
+		  id             INT AUTO_INCREMENT PRIMARY KEY,
+		  prova_id       INT NOT NULL,
+		  professor_id   INT NOT NULL,
+		  texto          TEXT        NOT NULL,
+		  valor          DECIMAL(5,2) NOT NULL,
+		  FOREIGN KEY (prova_id) 
+			REFERENCES provas(id)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE,
+		  FOREIGN KEY (professor_id) 
+			REFERENCES professores(id)
+			ON UPDATE CASCADE
+			ON DELETE RESTRICT
+		);
+
+		-- ====================================
+		-- 10. OPÇÕES
+		-- ====================================
+		CREATE TABLE opcoes (
+		  id            INT AUTO_INCREMENT PRIMARY KEY,
+		  questao_id    INT NOT NULL,
+		  rotulo        CHAR(1)      NOT NULL,       
+		  descricao     TEXT         NOT NULL,
+		  correta       BOOLEAN      NOT NULL DEFAULT FALSE,
+		  FOREIGN KEY (questao_id) 
+			REFERENCES questoes(id)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE
+		);
+
+		-- ====================================
+		-- 11. RESPOSTAS
+		-- ====================================
+		CREATE TABLE respostas (
+		  id             INT AUTO_INCREMENT PRIMARY KEY,
+		  aluno_id       INT NOT NULL,
+		  questao_id     INT NOT NULL,
+		  opcao_id       INT NOT NULL,
+		  data_resposta  DATETIME DEFAULT CURRENT_TIMESTAMP,
+		  FOREIGN KEY (aluno_id) 
+			REFERENCES alunos(id)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE,
+		  FOREIGN KEY (questao_id) 
+			REFERENCES questoes(id)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE,
+		  FOREIGN KEY (opcao_id) 
+			REFERENCES opcoes(id)
+			ON UPDATE CASCADE
+			ON DELETE CASCADE
+		);
+
+		-- ====================================
+		-- 12. VIEWS DE NOTAS
+		-- ====================================
+		DROP VIEW IF EXISTS vw_notas_aluno;
+		CREATE VIEW vw_notas_aluno AS
+		SELECT
+		  a.id            AS aluno_id,
+		  a.nome          AS aluno_nome,
+		  a.matricula     AS matricula,
+		  a.curso         AS curso,
+		  a.turma         AS turma,
+		  m.nome          AS materia,
+		  ROUND(AVG(n.nota),2) AS media_final
+		FROM notas n
+		JOIN provas p    ON n.prova_id    = p.id
+		JOIN materias m ON p.materia_id  = m.id
+		JOIN alunos a   ON n.aluno_id     = a.id
+		GROUP BY a.id, m.nome, a.turma;
+
+		DROP VIEW IF EXISTS vw_notas_professor;
+		CREATE VIEW vw_notas_professor AS
+		SELECT
+		  p.id             AS prova_id,
+		  p.descricao      AS descricao_prova,
+		  p.data_prova     AS data_prova,
+		  p.professor_id   AS professor_id,
+		  a.id             AS aluno_id,
+		  a.nome           AS aluno_nome,
+		  a.matricula      AS matricula,
+		  a.curso          AS curso,
+		  a.turma          AS turma,
+		  n.nota           AS nota
+		FROM notas n
+		JOIN provas p   ON n.prova_id = p.id
+		JOIN alunos a   ON n.aluno_id  = a.id;
+
+		-- ====================================
+		-- 13. VIEWS DE DASHBOARD
+		-- ====================================
+		DROP VIEW IF EXISTS vw_media_geral_aluno;
+		CREATE VIEW vw_media_geral_aluno AS
+		SELECT
+		  a.id            AS aluno_id,
+		  a.nome          AS aluno_nome,
+		  a.matricula     AS matricula,
+		  a.curso         AS curso,
+		  a.turma         AS turma,
+		  ROUND(AVG(n.nota),2) AS media_geral
+		FROM notas n
+		JOIN alunos a ON n.aluno_id = a.id
+		GROUP BY a.id, a.turma;
+
+		DROP VIEW IF EXISTS vw_media_por_materia;
+		CREATE VIEW vw_media_por_materia AS
+		SELECT
+		  m.id           AS materia_id,
+		  m.nome         AS materia,
+		  ROUND(AVG(n.nota),2) AS media_turma
+		FROM notas n
+		JOIN provas p    ON n.prova_id    = p.id
+		JOIN materias m ON p.materia_id  = m.id
+		GROUP BY m.id;
+
+		DROP VIEW IF EXISTS vw_distribuicao_notas;
+		CREATE VIEW vw_distribuicao_notas AS
+		SELECT
+		  CASE
+			WHEN n.nota < 2 THEN '0–2'
+			WHEN n.nota < 4 THEN '2–4'
+			WHEN n.nota < 6 THEN '4–6'
+			WHEN n.nota < 8 THEN '6–8'
+			ELSE               '8–10'
+		  END AS faixa,
+		  COUNT(*) AS total_alunos
+		FROM notas n
+		GROUP BY faixa
+		ORDER BY faixa;
+
+		DROP VIEW IF EXISTS vw_top10_alunos;
+		CREATE VIEW vw_top10_alunos AS
+		SELECT
+		  a.id            AS aluno_id,
+		  a.nome          AS aluno_nome,
+		  a.matricula     AS matricula,
+		  a.turma         AS turma,
+		  ROUND(AVG(n.nota),2) AS media_geral
+		FROM notas n
+		JOIN alunos a ON n.aluno_id = a.id
+		GROUP BY a.id
+		ORDER BY media_geral DESC
+		LIMIT 10;
+
+		-- ====================================
+		-- 14. VIEW ÚNICA DE RESUMO (Dashboard)
+		-- ====================================
+		DROP VIEW IF EXISTS vw_dashboard_summary;
+		CREATE VIEW vw_dashboard_summary AS
+		SELECT
+		  (SELECT COUNT(*) FROM alunos) AS total_alunos,
+		  (SELECT COUNT(DISTINCT turma) FROM alunos) AS total_turmas,
+		  (SELECT COUNT(*) 
+			 FROM (
+			   SELECT aluno_id, AVG(nota) AS media
+			   FROM notas
+			   GROUP BY aluno_id
+			 ) AS sub
+			 WHERE sub.media >= 6
+		  ) AS total_aprovados,
+		  (SELECT COUNT(*) 
+			 FROM (
+			   SELECT aluno_id, AVG(nota) AS media
+			   FROM notas
+			   GROUP BY aluno_id
+			 ) AS sub
+			 WHERE sub.media < 6
+		  ) AS total_reprovados;
+
+		-- ====================================
+		-- 15. DADOS DE EXEMPLO EM GRANDE VOLUME
+		--     2 PROFESSORES + 50 ALUNOS (25 por turma)
+		-- ====================================
+		-- 15.1) Usuários
+	-- INSERT corrigido para users
+INSERT INTO users (id, username, password, role) VALUES
+    (1, 'joao_pimentel',    'senha123', 'professor'),
+    (2, 'joao_evangelista', 'senha123', 'professor'),
+    (3, 'maria_silva',      'senha123', 'professor'),
+    (4, 'carlos_oliveira',  'senha123', 'professor'),
+    -- Alunos turma A (ids 5–27)
+    (5,  'aluno_ana',       'senha123', 'aluno'),
+    (6,  'aluno_bruno',     'senha123', 'aluno'),
+    (7,  'aluno_carla',     'senha123', 'aluno'),
+    (8,  'aluno_diego',     'senha123', 'aluno'),
+    (9,  'aluno_eduardo',   'senha123', 'aluno'),
+    (10, 'aluno_fabiana',   'senha123', 'aluno'),
+    (11, 'aluno_gabriel',   'senha123', 'aluno'),
+    (12, 'aluno_helena',    'senha123', 'aluno'),
+    (13, 'aluno_igor',      'senha123', 'aluno'),
+    (14, 'aluno_juliana',   'senha123', 'aluno'),
+    (15, 'aluno_karina',    'senha123', 'aluno'),
+    (16, 'aluno_lucas',     'senha123', 'aluno'),
+    (17, 'aluno_mariana',   'senha123', 'aluno'),
+    (18, 'aluno_nicolas',   'senha123', 'aluno'),
+    (19, 'aluno_olivia',    'senha123', 'aluno'),
+    (20, 'aluno_pedro',     'senha123', 'aluno'),
+    (21, 'aluno_quesia',    'senha123', 'aluno'),
+    (22, 'aluno_ricardo',   'senha123', 'aluno'),
+    (23, 'aluno_sofia',     'senha123', 'aluno'),
+    (24, 'aluno_tiago',     'senha123', 'aluno'),
+    (25, 'aluno_valentina', 'senha123', 'aluno'),
+    (26, 'aluno_willian',   'senha123', 'aluno'),
+    (27, 'aluno_xavier',    'senha123', 'aluno'),
+    (28, 'aluno_yara',      'senha123', 'aluno'),
+    (29, 'aluno_zeca',      'senha123', 'aluno'),
+    -- Alunos turma B (ids 30–54)
+    (30, 'aluno_adriana',   'senha123', 'aluno'),
+    (31, 'aluno_beatriz',   'senha123', 'aluno'),
+    (32, 'aluno_caio',      'senha123', 'aluno'),
+    (33, 'aluno_daniela',   'senha123', 'aluno'),
+    (34, 'aluno_eduarda',   'senha123', 'aluno'),
+    (35, 'aluno_fabio',     'senha123', 'aluno'),
+    (36, 'aluno_gustavo',   'senha123', 'aluno'),
+    (37, 'aluno_heloisa',   'senha123', 'aluno'),
+    (38, 'aluno_igor2',     'senha123', 'aluno'),
+    (39, 'aluno_joana',     'senha123', 'aluno'),
+    (40, 'aluno_kleber',    'senha123', 'aluno'),
+    (41, 'aluno_luana',     'senha123', 'aluno'),
+    (42, 'aluno_marcos',    'senha123', 'aluno'),
+    (43, 'aluno_nathalia',  'senha123', 'aluno'),
+    (44, 'aluno_oliveira',  'senha123', 'aluno'),
+    (45, 'aluno_patricia',  'senha123', 'aluno'),
+    (46, 'aluno_quiteria',  'senha123', 'aluno'),
+    (47, 'aluno_ricardo2',  'senha123', 'aluno'),
+    (48, 'aluno_sandra',    'senha123', 'aluno'),
+    (49, 'aluno_tamara',    'senha123', 'aluno'),
+    (50, 'aluno_ursula',    'senha123', 'aluno'),
+    (51, 'aluno_victor',    'senha123', 'aluno'),
+    (52, 'aluno_wagner',    'senha123', 'aluno'),
+    (53, 'aluno_ximena',    'senha123', 'aluno'),
+    (54, 'aluno_yves',      'senha123', 'aluno'),
+    -- Turma C (55–74)
+    (55, 'aluno_amelia',    'senha123', 'aluno'),
+    (56, 'aluno_breno',     'senha123', 'aluno'),
+    (57, 'aluno_camila',    'senha123', 'aluno'),
+    (58, 'aluno_danilo',    'senha123', 'aluno'),
+    (59, 'aluno_elisa',     'senha123', 'aluno'),
+    (60, 'aluno_felipe',    'senha123', 'aluno'),
+    (61, 'aluno_gisele',    'senha123', 'aluno'),
+    (62, 'aluno_henrique',  'senha123', 'aluno'),
+    (63, 'aluno_isa',       'senha123', 'aluno'),
+    (64, 'aluno_jeremias',  'senha123', 'aluno'),
+    (65, 'aluno_karen',     'senha123', 'aluno'),
+    (66, 'aluno_leandro',   'senha123', 'aluno'),
+    (67, 'aluno_marina',    'senha123', 'aluno'),
+    (68, 'aluno_natalia',   'senha123', 'aluno'),
+    (69, 'aluno_octavio',   'senha123', 'aluno'),
+    (70, 'aluno_priscila',  'senha123', 'aluno'),
+    (71, 'aluno_quintino',  'senha123', 'aluno'),
+    (72, 'aluno_renata',    'senha123', 'aluno'),
+    (73, 'aluno_samuel',    'senha123', 'aluno'),
+    (74, 'aluno_tatiana',   'senha123', 'aluno');
+
+-- INSERT corrigido para alunos
+INSERT INTO alunos (id, nome, matricula, curso, turma) VALUES
+    -- Turma A (5–29)
+    (5,  'Ana Pereira',       '2025ADS005', 'ADS', 'A'),
+    (6,  'Bruno Medeiros',    '2025ADS006', 'ADS', 'A'),
+    (7,  'Carla Oliveira',    '2025ADS007', 'ADS', 'A'),
+    (8,  'Diego Santos',      '2025ADS008', 'ADS', 'A'),
+    (9,  'Eduardo Lima',      '2025ADS009', 'ADS', 'A'),
+    (10, 'Fabiana Rocha',     '2025ADS010', 'ADS', 'A'),
+    (11, 'Gabriel Alves',     '2025ADS011', 'ADS', 'A'),
+    (12, 'Helena Costa',      '2025ADS012', 'ADS', 'A'),
+    (13, 'Igor Ferreira',     '2025ADS013', 'ADS', 'A'),
+    (14, 'Juliana Ramos',     '2025ADS014', 'ADS', 'A'),
+    (15, 'Karina Souza',      '2025ADS015', 'ADS', 'A'),
+    (16, 'Lucas Martins',     '2025ADS016', 'ADS', 'A'),
+    (17, 'Mariana Silva',     '2025ADS017', 'ADS', 'A'),
+    (18, 'Nicolas Pereira',   '2025ADS018', 'ADS', 'A'),
+    (19, 'Olivia Fernandes',  '2025ADS019', 'ADS', 'A'),
+    (20, 'Pedro Gomes',       '2025ADS020', 'ADS', 'A'),
+    (21, 'Quesia Andrade',    '2025ADS021', 'ADS', 'A'),
+    (22, 'Ricardo Dias',      '2025ADS022', 'ADS', 'A'),
+    (23, 'Sofia Carvalho',    '2025ADS023', 'ADS', 'A'),
+    (24, 'Tiago Barbosa',     '2025ADS024', 'ADS', 'A'),
+    (25, 'Valentina Souza',   '2025ADS025', 'ADS', 'A'),
+    (26, 'Willian Sousa',     '2025ADS026', 'ADS', 'A'),
+    (27, 'Xavier Oliveira',   '2025ADS027', 'ADS', 'A'),
+    (28, 'Yara Nunes',        '2025ADS028', 'ADS', 'A'),
+    (29, 'José Zecchinelli',  '2025ADS029', 'ADS', 'A'),
+    -- Turma B (30–54)
+    (30, 'Adriana Lima',      '2025ADS030', 'ADS', 'B'),
+    (31, 'Beatriz Castro',    '2025ADS031', 'ADS', 'B'),
+    (32, 'Caio Ferreira',     '2025ADS032', 'ADS', 'B'),
+    (33, 'Daniela Rocha',     '2025ADS033', 'ADS', 'B'),
+    (34, 'Eduarda Alves',     '2025ADS034', 'ADS', 'B'),
+    (35, 'Fábio Santos',      '2025ADS035', 'ADS', 'B'),
+    (36, 'Gustavo Lima',      '2025ADS036', 'ADS', 'B'),
+    (37, 'Heloísa Costa',     '2025ADS037', 'ADS', 'B'),
+    (38, 'Igor Moreira',      '2025ADS038', 'ADS', 'B'),
+    (39, 'Joana Ramos',       '2025ADS039', 'ADS', 'B'),
+    (40, 'Kléber Souza',      '2025ADS040', 'ADS', 'B'),
+    (41, 'Luana Martins',     '2025ADS041', 'ADS', 'B'),
+    (42, 'Marcos Pereira',    '2025ADS042', 'ADS', 'B'),
+    (43, 'Nathália Dias',     '2025ADS043', 'ADS', 'B'),
+    (44, 'Oliveira Silva',    '2025ADS044', 'ADS', 'B'),
+    (45, 'Patrícia Gomes',    '2025ADS045', 'ADS', 'B'),
+    (46, 'Quitéria Andrade',  '2025ADS046', 'ADS', 'B'),
+    (47, 'Ricardo Azevedo',   '2025ADS047', 'ADS', 'B'),
+    (48, 'Sandra Carvalho',   '2025ADS048', 'ADS', 'B'),
+    (49, 'Tamara Barbosa',    '2025ADS049', 'ADS', 'B'),
+    (50, 'Úrsula Mendes',     '2025ADS050', 'ADS', 'B'),
+    (51, 'Victor Costa',      '2025ADS051', 'ADS', 'B'),
+    (52, 'Wagner Oliveira',   '2025ADS052', 'ADS', 'B'),
+    (53, 'Ximena Fernandes',  '2025ADS053', 'ADS', 'B'),
+    (54, 'Yves Martins',      '2025ADS054', 'ADS', 'B'),
+    -- Turma C (55–74)
+    (55, 'Amélia Souza',      '2025ADS055', 'ADS', 'C'),
+    (56, 'Breno Carvalho',    '2025ADS056', 'ADS', 'C'),
+    (57, 'Camila Ferreira',   '2025ADS057', 'ADS', 'C'),
+    (58, 'Danilo Pires',      '2025ADS058', 'ADS', 'C'),
+    (59, 'Elisa Menezes',     '2025ADS059', 'ADS', 'C'),
+    (60, 'Felipe Costa',      '2025ADS060', 'ADS', 'C'),
+    (61, 'Gisele Ramos',      '2025ADS061', 'ADS', 'C'),
+    (62, 'Henrique Lima',     '2025ADS062', 'ADS', 'C'),
+    (63, 'Isa Oliveira',      '2025ADS063', 'ADS', 'C'),
+    (64, 'Jeremias Santos',   '2025ADS064', 'ADS', 'C'),
+    (65, 'Karen Almeida',     '2025ADS065', 'ADS', 'C'),
+    (66, 'Leandro Nogueira',  '2025ADS066', 'ADS', 'C'),
+    (67, 'Marina Silva',      '2025ADS067', 'ADS', 'C'),
+    (68, 'Natália Pereira',   '2025ADS068', 'ADS', 'C'),
+    (69, 'Octávio Fernandes', '2025ADS069', 'ADS', 'C'),
+    (70, 'Priscila Rocha',    '2025ADS070', 'ADS', 'C'),
+    (71, 'Quintino Gomes',    '2025ADS071', 'ADS', 'C'),
+    (72, 'Renata Barbosa',    '2025ADS072', 'ADS', 'C'),
+    (73, 'Samuel Martins',    '2025ADS073', 'ADS', 'C'),
+    (74, 'Tatiana Castro',    '2025ADS074', 'ADS', 'C');
+
+-- INSERT para professores
+INSERT INTO professores (id, nome, email) VALUES
+    (1, 'João Pimentel',    'joao.pimentel@universidade.edu'),
+    (2, 'João Evangelista', 'joao.evangelista@universidade.edu'),
+    (3, 'Maria Silva',      'maria.silva@universidade.edu'),
+    (4, 'Carlos Oliveira',  'carlos.oliveira@universidade.edu');
+
+		-- 15.4) Disciplinas e matérias
+		INSERT INTO disciplinas (nome, curso) VALUES
+		  ('Banco de Dados','ADS');
+
+		INSERT INTO materias (nome) VALUES
+          ('Banco de Dados'),
+          ('Programação WEB'),
+          ('Engenharia de Software'),
+          ('Redes de Computadores'),
+          ('Sistemas Operacionais');
+          
+          select * from materias;
+          
+          SELECT id, nome FROM materias;
+          
+		-- 15.5) Matrículas em matéria (todos os alunos nas matéria 1)
+		INSERT INTO matriculas (aluno_id, materia_id)
+		SELECT id, 1 FROM alunos;
+
+		-- 15.6) Provas
+		INSERT INTO provas (materia_id, professor_id, data_prova, descricao) VALUES
+		  (1, 1, '2025-06-10', 'Prova I – Banco de Dados'),
+		  (1, 2, '2025-07-01', 'Prova II – Banco de Dados');
+
+		-- 15.7) Notas (exemplo com RAND para 50 alunos)
+		INSERT INTO notas (prova_id, aluno_id, nota)
+		SELECT 1, id, ROUND(RAND() * 4 + 6, 2) FROM alunos;
+		INSERT INTO notas (prova_id, aluno_id, nota)
+		SELECT 2, id, ROUND(RAND() * 4 + 6, 2) FROM alunos;
+
+
+		-- Forçar reprovação de 3 alunos (média < 6)
+		-- Aluno 5 (Carla Oliveira) — media = (4.0 + 3.5)/2 = 3.75
+		INSERT INTO notas (prova_id, aluno_id, nota) VALUES
+		  (1, 5, 4.0),
+		  (2, 5, 3.5);
+
+		-- Aluno 8 (Fabiana Rocha) — media = (2.5 + 5.0)/2 = 3.75
+		INSERT INTO notas (prova_id, aluno_id, nota) VALUES
+		  (1, 8, 2.5),
+		  (2, 8, 5.0);
+
+		-- Aluno 12 (Juliana Ramos) — media = (1.0 + 4.0)/2 = 2.50
+		INSERT INTO notas (prova_id, aluno_id, nota) VALUES
+		  (1, 12, 1.0),
+		  (2, 12, 4.0);
+		  
+		  SELECT * FROM vw_status_alunos WHERE status = 'REPROVADO' ORDER BY turma, aluno_nome;
+
+		CREATE TABLE tarefas (
+		  id            INT AUTO_INCREMENT PRIMARY KEY,
+		  nome_arquivo  VARCHAR(255) NOT NULL,
+		  tipo_arquivo  VARCHAR(50),
+		  dados         LONGBLOB,
+		  data_envio    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		  aluno_id      INT NOT NULL,
+		  FOREIGN KEY (aluno_id) REFERENCES alunos(id) ON DELETE CASCADE
+		);
+
+	CREATE TABLE status_disciplinas (
+	  id INT AUTO_INCREMENT PRIMARY KEY,
+	  disciplina VARCHAR(100),
+	  aprovados INT,
+	  reprovados INT,
+	  recuperacao INT,
+	  data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	INSERT INTO status_disciplinas (disciplina, aprovados, reprovados, recuperacao, data_atualizacao) VALUES
+	('Banco de Dados', 7, 14, 10, CURDATE()),
+	('Engenharia de Software', 28, 17, 8, CURDATE()),
+	('Mobile', 30, 18, 7, CURDATE()),
+	('Redes', 25, 20, 5, CURDATE());
+
+	SELECT disciplina, aprovados, reprovados, recuperacao, data_atualizacao
+	FROM status_disciplinas;
+
+	SHOW COLUMNS FROM vw_status_disciplinas;
+
+	SELECT * FROM vw_status_disciplinas;
+    
+    CREATE TABLE visaoalunodashboard (
+  tipo VARCHAR(100) NOT NULL,
+  value INT NOT NULL,
+  PRIMARY KEY (tipo)
+);
+
+INSERT INTO visaoalunodashboard (tipo, value) VALUES 
+  ('Total de Tarefas', 10),
+  ('Tarefas Realizadas', 8),
+  ('Provas Realizadas', 2),
+  ('Provas Pendentes', 2);
+
+select * from visaoalunodashboard;
+
+CREATE TABLE disciplinas_aluno_carrossel (
+  nome_disciplina VARCHAR(100),
+  professor VARCHAR(100),
+  horario_inicio VARCHAR(20),
+  horario_fim VARCHAR(20),
+  sala VARCHAR(50),
+  situacao VARCHAR(50)
+);
+
+INSERT INTO disciplinas_aluno_carrossel (nome_disciplina, professor, horario_inicio, horario_fim, sala, situacao) VALUES
+  ('Banco de Dados', 'João Pimentel', '09h00 AM', '12h00 AM', 'LAB 104', 'Cursando'),
+  ('Programação WEB', 'João Evangelista', '09h00 AM', '12h00 AM', 'LAB 109', 'Cursando'),
+  ('Redes de Computadores', 'Maria Silva', '14h00 PM', '17h00 PM', 'LAB 202', 'Cursando'),
+  ('Banco de Dados Avançado', 'Carlos Oliveira', '08h00 AM', '11h00 AM', 'LAB 101', 'Cursando');
+
+  
+  select * from disciplinas_aluno_carrossel;
+
+CREATE TABLE grafico_nota (
+  label VARCHAR(100),
+  semestre1 INT,
+  semestre2 INT
+);
+
+INSERT INTO grafico_nota (label, semestre1, semestre2) VALUES
+  ('Banco de Dados', 8, 10),
+  ('Programação WEB', 7, 9),
+  ('Estrutura de dados', 5, 9),
+  ('Engenharia de software', 6, 4);
+  
+  
+	CREATE OR REPLACE VIEW view_disciplinas_aluno_carrossel_com_id AS
+	SELECT 
+		dac.nome_disciplina,
+		p.id AS professor_id,
+		dac.professor,
+		dac.horario_inicio,
+		dac.horario_fim,
+		dac.sala,
+		dac.situacao
+	FROM 
+		disciplinas_aluno_carrossel dac
+	JOIN 
+		professores p ON dac.professor = p.nome;
+
+
+DELETE FROM notas WHERE prova_id = 1;
+DELETE FROM provas WHERE id = 1;
+
+
+
+
+
+
